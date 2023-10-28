@@ -1,0 +1,40 @@
+{
+  "project_info": {
+    "project_number": "133224953517",
+    "firebase_url": "https://kqduell-default-rtdb.europe-west1.firebasedatabase.app",
+    "project_id": "kqduell",
+    "storage_bucket": "kqduell.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:133224953517:android:267d5ec6efb1862f07b824",
+        "android_client_info": {
+          "package_name": "com.example.kqduell"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "133224953517-ufovp18tni9a7n4t376ntslqijlnphba.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBe-KE-h96xC1TMU_vddRTyglat1KP6Y2k"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "133224953517-ufovp18tni9a7n4t376ntslqijlnphba.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
