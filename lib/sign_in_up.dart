@@ -102,7 +102,7 @@ class _SignInUpState extends State<SignInUp> {
                           DatabaseService _databaseService = DatabaseService();
                           String username = (await _databaseService.getUsernameByUID(result['uid']!)) ?? 'Unknown';
 
-    Provider.of<UserProvider>(context, listen: false).setUser(UserModel(uid: result['uid']!, username: username));
+                          Provider.of<UserProvider>(context, listen: false).setUser(UserModel(uid: result['uid']!, username: username));
 
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntermediateScreen()));
                         }
@@ -151,4 +151,3 @@ class _SignInUpState extends State<SignInUp> {
     );
   }
 }
-
