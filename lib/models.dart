@@ -25,7 +25,7 @@ class GameRoom {
   final String hostId;
   final String hostName;
   final String? hostProfilePicturePath;
-  final List<String> players; // Now contains only UIDs of the players.
+  final List<String> players;
   final int maxPlayers;
   final String status;
   final String? currentSongId;
@@ -33,6 +33,8 @@ class GameRoom {
   final int currentVideoIndex;
   final int currentRound;
   final String gameStatus;
+  final Map<String, bool> skipRequests; // Field to store skip requests
+
 
   GameRoom({
     required this.roomId,
@@ -47,6 +49,8 @@ class GameRoom {
     required this.currentVideoIndex,
     required this.currentRound,
     required this.gameStatus,
+    required this.skipRequests, // Initialize in constructor
+
   });
 
   Map<String, dynamic> toJson() => {
@@ -54,7 +58,7 @@ class GameRoom {
     'hostId': hostId,
     'hostName': hostName,
     'hostProfilePicturePath': hostProfilePicturePath,
-    'players': players, // Storing the UIDs as a list.
+    'players': players,
     'maxPlayers': maxPlayers,
     'status': status,
     'currentSongId': currentSongId,
@@ -62,9 +66,17 @@ class GameRoom {
     'currentVideoIndex': currentVideoIndex,
     'currentRound': currentRound,
     'gameStatus': gameStatus,
+    'skipRequests': skipRequests,
+
   };
 
   static GameRoom fromMap(Map<String, dynamic> data) {
+    // Extract skipRequests, ensure it is a Map with String keys and bool values
+    Map<String, bool> skipRequests = {};
+    if (data.containsKey('skipRequests') && data['skipRequests'] is Map) {
+      skipRequests = (data['skipRequests'] as Map).cast<String, bool>();
+    }
+
     return GameRoom(
         roomId: data['roomId'] ?? '',
         hostId: data['hostId'] ?? '',
@@ -77,7 +89,11 @@ class GameRoom {
         timestamp: DateTime.parse(data['timestamp'] ?? DateTime.now().toIso8601String()),
         currentVideoIndex: data['currentVideoIndex'] ?? 0,
         currentRound: data['currentRound'] ?? 0,
-        gameStatus: data['gameStatus'] ?? ''
+        gameStatus: data['gameStatus'] ?? '',
+      skipRequests: skipRequests, // Add this line
+
     );
   }
+
+
 }

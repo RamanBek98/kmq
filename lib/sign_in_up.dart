@@ -99,13 +99,11 @@ class _SignInUpState extends State<SignInUp> {
                       } else {
                         result = await _auth.signInWithEmailAndPassword(_email, _password);
                         if (result['error'] == '') {
-                          DatabaseService _databaseService = DatabaseService();  // Initialize the DatabaseService
-    String username = await _databaseService.getUsernameByUID(result['uid']!);
+                          DatabaseService _databaseService = DatabaseService();
+                          String username = (await _databaseService.getUsernameByUID(result['uid']!)) ?? 'Unknown';
 
-    // Update the UserProvider with the fetched user data
     Provider.of<UserProvider>(context, listen: false).setUser(UserModel(uid: result['uid']!, username: username));
 
-    // Navigate to the intermediate screen after sign-in
                           Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => IntermediateScreen()));
                         }
                       }

@@ -54,6 +54,7 @@ class _GameScreenState extends State<GameScreen> {
       });
     });
   }
+
   Future<void> _fetchVideoData() async {
     QuerySnapshot querySnapshot = await FirebaseFirestore.instance.collection('Songs').get();
     List<Map<String, dynamic>> data = querySnapshot.docs.map((doc) => doc.data() as Map<String, dynamic>).toList();

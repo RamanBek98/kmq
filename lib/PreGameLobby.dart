@@ -3,6 +3,8 @@ import 'models.dart';
 import 'Multiplayer.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'database.dart';
+import 'dart:async';
+
 
 class PreGameLobbyScreen extends StatefulWidget {
   final String roomId;
@@ -21,53 +23,38 @@ class _PreGameLobbyScreenState extends State<PreGameLobbyScreen> {
   String roomName = '';
   String hostName = '';
   List<String> players = [];  // This list will hold the UIDs of the players.
+  List<Map<String, dynamic>> videoData = [];  // Add a field to store video data
+  late StreamSubscription _gameRoomStatusSubscription;
+
 
   @override
   void initState() {
     super.initState();
 
-    database.child('gameRooms').child(widget.roomId).onValue.listen((event) {
-      Map<String, dynamic>? data;
-      if (event.snapshot.value is Map<String, dynamic>) {
-        data = event.snapshot.value as Map<String, dynamic>;
+    // Initialize the StreamSubscription
+    _gameRoomStatusSubscription = database.child('gameRooms').child(widget.roomId).onValue.listen((DatabaseEvent event) {      if (event.snapshot.value is Map) {
+      var data = Map<String, dynamic>.from(event.snapshot.value as Map);
 
-        // Check each key-value pair
-        if (data['players'] is! List) {
-          print('Error: players key is not a list.');
-          return;
-        }
+      // Update UI with new data
+      setState(() {
+        hostId = data['hostId'] ?? '';
+        roomName = data['roomId'] ?? '';
+        hostName = data['hostName'] ?? '';
+        players = List<String>.from(data['players'] ?? []);
+      });
 
-        if (data['hostId'] is! String) {
-          print('Error: hostId key is not a string.');
-          return;
-        }
-
-        if (data['roomId'] is! String) {
-          print('Error: roomId key is not a string.');
-          return;
-        }
-
-        if (data['hostName'] is! String) {
-          print('Error: hostName key is not a string.');
-          return;
-        }
-
-        // Convert players list
-        List<String> playerList = (data['players'] as List).cast<String>();
-
-        setState(() {
-          hostId = data?['hostId'] ?? '';
-          roomName = data?['roomId'] ?? '';
-          hostName = data?['hostName'] ?? '';
-          players = playerList;
-        });
-
-      } else {
-        print('Unexpected data type: ${event.snapshot.value.runtimeType}');
-        print('Unexpected data format: ${event.snapshot.value}');
-        return;
+      // Check for game start
+      if (data['status'] == 'started') {
+        // Navigate to MultiplayerGameScreen for all players
+        Navigator.pushReplacement(context, MaterialPageRoute(
+          builder: (context) => MultiplayerGameScreen(roomId: widget.roomId),
+        ));
       }
+    }
     });
+
+    // Additional initialization logic if needed
+    _fetchGameData();
   }
 
 
@@ -109,119 +96,135 @@ class _PreGameLobbyScreenState extends State<PreGameLobbyScreen> {
       onWillPop: () async => false,
       child: Scaffold(
         appBar: AppBar(title: Text('Pre-Game Lobby')),
-        body: Column(
-          children: [
-            Text(
-              roomName,
-              style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(vertical: 20),
-            ),
-            Expanded(
-              child: ListView.builder(
-                itemCount: players.length,
-                itemBuilder: (context, index) {
-                  String playerUid = players[index];
+        body: StreamBuilder<DatabaseEvent>(
+            stream: database.child('gameRooms').child(widget.roomId).onValue,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(child: CircularProgressIndicator());
+              }
 
-                  Future<UserModel> fetchPlayerDetails(String uid) async {
-                    String username = await db.getUsernameByUID(uid);
-                    String? profilePicturePath = await db.getProfilePictureByUID(uid);
-                    return UserModel(uid: uid, username: username, profilePicturePath: profilePicturePath);
-                  }
+              if (!snapshot.hasData || snapshot.data!.snapshot.value == null) {
+                return Center(child: Text('No Data Available'));
+              }
 
-                  return FutureBuilder<UserModel>(
-                    future: fetchPlayerDetails(playerUid),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.done) {
-                        if (snapshot.hasData) {
-                          UserModel player = snapshot.data!;
+              var data = Map<String, dynamic>.from(snapshot.data!.snapshot.value as Map);
+              var room = GameRoom.fromMap(data);
 
-                          return Padding(
-                            padding: const EdgeInsets.all(8.0),
-                            child: ListTile(
-                              leading: Container(
-                                width: 70.0,
-                                height: 70.0,
-                                child: Stack(
-                                  clipBehavior: Clip.none,
-                                  children: [
-                                    Positioned.fill(
-                                      child: CircleAvatar(
-                                        radius: 31.0,
-                                        backgroundImage: (player.profilePicturePath != null && player.profilePicturePath!.isNotEmpty)
-                                            ? NetworkImage(player.profilePicturePath!) as ImageProvider<Object>
-                                            : AssetImage('assets/images/placeholder.jpg') as ImageProvider<Object>,
-                                        backgroundColor: Colors.transparent,
+              return Column(
+                children: [
+                  Text(
+                    room.roomId,
+                    style: TextStyle(fontSize: 34, fontWeight: FontWeight.bold),
+                  ),
+                  Padding(
+                    padding: EdgeInsets.symmetric(vertical: 20),
+                  ),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: players.length,
+                      itemBuilder: (context, index) {
+                        String playerUid = players[index];
+
+                        Future<UserModel> fetchPlayerDetails(String uid) async {
+                          String username = (await db.getUsernameByUID(uid)) ?? 'Unknown';
+                          String? profilePicturePath = await db.getProfilePictureByUID(uid);
+                          return UserModel(uid: uid, username: username, profilePicturePath: profilePicturePath);
+                        }
+
+                        return FutureBuilder<UserModel>(
+                          future: fetchPlayerDetails(playerUid),
+                          builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.done) {
+                              if (snapshot.hasData) {
+                                UserModel player = snapshot.data!;
+
+                                return Padding(
+                                  padding: const EdgeInsets.all(8.0),
+                                  child: ListTile(
+                                    leading: Container(
+                                      width: 70.0,
+                                      height: 70.0,
+                                      child: Stack(
+                                        clipBehavior: Clip.none,
+                                        children: [
+                                          Positioned.fill(
+                                            child: CircleAvatar(
+                                              radius: 31.0,
+                                              backgroundImage: player.profilePicturePath != null && player.profilePicturePath!.isNotEmpty
+                                                  ? NetworkImage(player.profilePicturePath!) as ImageProvider<Object>
+                                                  : AssetImage('assets/images/placeholder.jpg') as ImageProvider<Object>,
+                                              backgroundColor: Colors.transparent,
+                                            ),
+                                          ),
+                                          if (player.uid == hostId)
+                                            Positioned(
+                                              top: -6,
+                                              right: 1,
+                                              child: Transform.rotate(
+                                                angle: 0.6,
+                                                child: Text('👑', style: TextStyle(fontSize: 20)),
+                                              ),
+                                            )
+                                        ],
                                       ),
                                     ),
-                                    if (player.uid == hostId)
-                                      Positioned(
-                                        top: -6,
-                                        right: 1,
-                                        child: Transform.rotate(
-                                          angle: 0.6,
-                                          child: Text('👑', style: TextStyle(fontSize: 20)),
-                                        ),
-                                      )
-                                  ],
-                                ),
-                              ),
-                              title: Text(player.username, style: TextStyle(fontSize: 22)),
-                            ),
-                          );
-                        } else {
-                          return Center(child: CircularProgressIndicator());
-                        }
+                                    title: Text(player.username, style: TextStyle(fontSize: 22)),
+                                  ),
+                                );
+                              } else {
+                                return Center(child: CircularProgressIndicator());
+                              }
+                            } else {
+                              return Center(child: CircularProgressIndicator());
+                            }
+                          },
+                        );
+                      },
+                    ),
+                  ),
+                  ElevatedButton(
+                    child: Text('Fetch Data'),
+                    onPressed: () async {
+                      await _fetchGameData();
+                    },
+                  ),
+                  ElevatedButton(
+                    child: Text('Start Game'),
+                    onPressed: () {
+                      // Compare the hostId with the current user's ID
+                      if (hostId == widget.currentUserId) {
+                        db.startGame(widget.roomId, 'CKsuPRFpC2s');
+                        Navigator.push(context, MaterialPageRoute(
+                            builder: (context) => MultiplayerGameScreen(roomId: widget.roomId)
+                        ));
                       } else {
-                        return Center(child: CircularProgressIndicator());
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text("Wait!"),
+                              content: Text("Please wait for the host to start the game."),
+                              actions: [
+                                TextButton(
+                                  child: Text("OK"),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
                       }
                     },
-                  );
-                },
-              ),
-            ),
-            ElevatedButton(
-              child: Text('Fetch Data'),
-              onPressed: () async {
-                await _fetchGameData();
-              },
-            ),
-            ElevatedButton(
-              child: Text('Start Game'),
-              onPressed: () {
-                if (hostName == widget.currentUserId) {
-                  db.startGame(widget.roomId, 'RDJ3RCss03v1k');
-                  Navigator.push(context, MaterialPageRoute(
-                      builder: (context) => MultiplayerGameScreen(roomId: widget.roomId)
-                  ));
-                } else {
-                  showDialog(
-                    context: context,
-                    builder: (BuildContext context) {
-                      return AlertDialog(
-                        title: Text("Wait!"),
-                        content: Text("Please wait for the host to start the game."),
-                        actions: [
-                          TextButton(
-                            child: Text("OK"),
-                            onPressed: () {
-                              Navigator.of(context).pop();
-                            },
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                }
-              },
-            ),
-            ElevatedButton(
-              onPressed: onLeaveRoomButtonPressed,
-              child: Text("Leave Room"),
-            ),
-          ],
-        ),
+                  ),
+
+                  ElevatedButton(
+                    onPressed: onLeaveRoomButtonPressed,
+                    child: Text("Leave Room"),
+                  ),
+                ],
+              );}),
       ),
     );
   }

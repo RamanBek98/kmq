@@ -8,23 +8,23 @@ import 'sign_in_up.dart';
 import 'intermediate_screen.dart';
 import 'UserProvider.dart';
 import 'package:flutter/services.dart';
-
+import 'package:kqduell/Multiplayer.dart';
 
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
 
-  final userProvider = UserProvider();
-  await userProvider.fetchCurrentUser();  // Fetch the current user on app startup
-
-  runApp(
-    ChangeNotifierProvider.value(
-      value: userProvider,
-      child: MyApp(),
-    ),
-  );
+  runApp(MultiProvider(
+    providers: [
+      ChangeNotifierProvider(create: (_) => UserProvider()..fetchCurrentUser()),
+      ChangeNotifierProvider(create: (_) => PlayerDataNotifier()),
+    ],
+    child: MyApp(),
+  ));
 }
+
+
 
 
 

@@ -36,11 +36,16 @@ class _MultiplayerLobbyState extends State<MultiplayerLobby> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Error loading game rooms: ${snapshot.error}'));
                 }
-                if (!snapshot.hasData) {
+                if (!snapshot.hasData || snapshot.data == null) {
                   return Center(child: CircularProgressIndicator());
                 }
 
+                if (!snapshot.data!.every((room) => room is GameRoom)) {
+                  return Center(child: Text('Unexpected data format in one or more game rooms'));
+                }
+
                 List<GameRoom> rooms = snapshot.data!;
+
                 return ListView.builder(
                   itemCount: rooms.length,
                   itemBuilder: (context, index) {
@@ -60,20 +65,20 @@ class _MultiplayerLobbyState extends State<MultiplayerLobby> {
                         ),
                         child: CircleAvatar(
                           radius: 29.0,
-                          backgroundImage: (hostProfilePicturePath != null && hostProfilePicturePath.isNotEmpty
+                          backgroundImage: (hostProfilePicturePath != null && hostProfilePicturePath.isNotEmpty)
                               ? NetworkImage(hostProfilePicturePath)
-                              : AssetImage('assets/images/placeholder.jpg')) as ImageProvider<Object>?,
+                              : AssetImage('assets/images/placeholder.jpg') as ImageProvider<Object>?,
                         ),
                       ),
                       title: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start, // Align to the left
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: <Widget>[
-                          Text('${room.roomId}'),  // Room name
+                          Text('${room.roomId}'),
                           Text(
-                            '${room.hostName}',  // Host name
+                            '${room.hostName}',
                             style: TextStyle(
-                              fontSize: 14.0,  // Smaller font size
-                              color: Colors.black54,  // Lighter shade of black
+                              fontSize: 14.0,
+                              color: Colors.black54,
                             ),
                           ),
                         ],
@@ -121,7 +126,7 @@ class _MultiplayerLobbyState extends State<MultiplayerLobby> {
                           onPressed: () async {
                             String roomName = roomNameController.text;
                             if (currentUser != null) {
-                              List<Map<String, dynamic>> data = await db.fetchSongs();
+                              List<Map<String, dynamic>> data = (await db.fetchSongs()).cast<Map<String, dynamic>>();
                               List<Map<String, dynamic>> randomizedVideoData = _randomizeList(data);
                               bool success = await db.createRoom(currentUser, roomName, randomizedVideoData);
                               if (success) {
