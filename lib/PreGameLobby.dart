@@ -46,9 +46,9 @@ class _PreGameLobbyScreenState extends State<PreGameLobbyScreen> {
       // Check for game start
       if (data['status'] == 'started') {
         // Navigate to MultiplayerGameScreen for all players
-        Navigator.pushReplacement(context, MaterialPageRoute(
-          builder: (context) => MultiplayerGameScreen(roomId: widget.roomId),
-        ));
+        // Navigator.pushReplacement(context, MaterialPageRoute(
+        //   builder: (context) => MultiplayerGameScreen(roomId: widget.roomId),
+        // ));
       }
     }
     });

@@ -19,8 +19,6 @@ final _formKey = GlobalKey<FormState>();
 
 
 
-
-
 class MultiplayerGameScreen extends StatefulWidget {
   final String roomId;  // Add room ID
   final int gameLimit;
@@ -36,6 +34,7 @@ class MultiplayerGameScreen extends StatefulWidget {
   @override
   _MultiplayerGameScreenState createState() => _MultiplayerGameScreenState();
 }
+
 final _controllerCompleter = Completer<YoutubePlayerController>();
 
 class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
@@ -74,8 +73,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     initializeController();
     listenToPlayerUpdates(widget.roomId); // This line remains to set up player updates listening.
   }
-
-
 
 
   Future<UserModel> fetchPlayerDetails(String uid) async {
@@ -140,7 +137,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
           );
           _controller.addListener(_onPlayerStateChanged);
           _isControllerInitialized = true;
-
           // Add a delay before calling play
           Future.delayed(Duration(milliseconds: 5500), () {
             if (videoData.isNotEmpty) {
@@ -162,15 +158,15 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
 
   void _simulateVideoEnd() {
-    if (!_isControllerInitialized || !_canSkip) return;
+    if (!_isControllerInitialized) return;
 
-    if (!_canSkip) return;
+    // if (!_canSkip) return;
     int newPosition = 75 + widget.gameDuration.inSeconds;
     _controller.seekTo(Duration(seconds: newPosition));
-    _canSkip = false;
+    // _canSkip = false;
     Future.delayed(Duration(seconds: 2), () {
       (() {
-        _canSkip = true;
+        // _canSkip = true;
       });
     });
 
@@ -234,7 +230,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
 
   void _onPlayerStateChanged() {
     if (!_isControllerInitialized) return;
-
     double currentPosition = _controller.value.position.inMilliseconds.toDouble();
 
     // Check if the video's current position is after the 78-second mark
@@ -366,7 +361,6 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
     if (_isControllerInitialized) {
       _controller.dispose();
     }
-
     super.dispose();
   }
 
@@ -377,6 +371,8 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
         var data = Map<String, dynamic>.from(event.snapshot.value as Map);
         List<String> playerUids = List<String>.from(data['players'] ?? []);
         // Use Provider or a custom method to update player information
+        // if(){}
+        print("Data : ${data["skipRequests"]}");
         Provider.of<PlayerDataNotifier>(context, listen: false).fetchAndUpdatePlayerDetails(playerUids);
       }
     });
@@ -562,7 +558,7 @@ class _MultiplayerGameScreenState extends State<MultiplayerGameScreen> {
                                       style: ButtonStyle(
                                         backgroundColor: MaterialStateProperty.all<Color>(Color(0xFF6C045E).withOpacity(0.5)),
                                       ),
-                                      onPressed: _skipAvailable && _canSkip ? _simulateVideoEnd : null,
+                                      onPressed: _skipAvailable ? _simulateVideoEnd : null,
                                       child: Text("Skip"),
                                     ),
                                   ),
@@ -713,11 +709,11 @@ class PlayerInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ImageProvider backgroundImage;
-    if (profilePicUrl != null) {
-      backgroundImage = NetworkImage(profilePicUrl!);
-    } else {
-      backgroundImage = AssetImage('assets/default-avatar.png');
-    }
+    // if (profilePicUrl != null) {
+    //   backgroundImage = NetworkImage(profilePicUrl!);
+    // } else {
+      backgroundImage = AssetImage('assets/images/placeholder.jpg');
+    // }
 
     return Container(
       padding: EdgeInsets.all(8),
@@ -745,19 +741,6 @@ class PlayerInfoWidget extends StatelessWidget {
 
   }
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 class SuggestionsBox extends StatelessWidget {
   final String typedText;
