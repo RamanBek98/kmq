@@ -709,11 +709,11 @@ class PlayerInfoWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     ImageProvider backgroundImage;
-    // if (profilePicUrl != null) {
-    //   backgroundImage = NetworkImage(profilePicUrl!);
-    // } else {
+     if (profilePicUrl != null) {
+      backgroundImage = NetworkImage(profilePicUrl!);
+     } else {
       backgroundImage = AssetImage('assets/images/placeholder.jpg');
-    // }
+     }
 
     return Container(
       padding: EdgeInsets.all(8),
